@@ -1,70 +1,45 @@
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useBook, useBookDescription } from '../hooks/useBooks';
 import { imageCache } from '../utils/imageCache';
-
-import type { Book } from '../types/Book';
 import './BookPage.css';
 
 const BookPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [book, setBook] = useState<Book | null>(null);
-  const [description, setDescription] = useState<string | null>(null);
-  const [loadingDescription, setLoadingDescription] = useState(false);
   const [cachedImageUrl, setCachedImageUrl] = useState<string | null>(null);
 
+  // Use React Query for book data
+  const { data: book, isLoading: bookLoading, error: bookError } = useBook(id);
+
+  // Use React Query for description data
+  const { data: description, isLoading: descriptionLoading, error: descriptionError } = useBookDescription(book?.openLibraryId);
+
   useEffect(() => {
-    if (!id) return;
+    if (!book) return;
 
-    fetch(`https://localhost:7101/books/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch book');
-        return res.json();
-      })
-      .then(async (book: Book) => {
-        setBook(book);
-
-        // Check if image is already cached
-        const cached = imageCache.getCachedImageUrl(book.coverImageUrl);
-        if (cached) {
-          setCachedImageUrl(cached);
-        } else {
-          // Cache the image and get the blob URL
-          try {
-            const blobUrl = await imageCache.preloadImage(book.coverImageUrl);
-            setCachedImageUrl(blobUrl);
-          } catch (error) {
-            console.warn('Failed to cache image:', error);
-            // Fallback to original URL
-            setCachedImageUrl(book.coverImageUrl);
-          }
+    const handleImageCaching = async () => {
+      // Check if image is already cached
+      const cached = imageCache.getCachedImageUrl(book.coverImageUrl);
+      if (cached) {
+        setCachedImageUrl(cached);
+      } else {
+        // Cache the image and get the blob URL
+        try {
+          const blobUrl = await imageCache.preloadImage(book.coverImageUrl);
+          setCachedImageUrl(blobUrl);
+        } catch (error) {
+          console.warn('Failed to cache image:', error);
+          // Fallback to original URL
+          setCachedImageUrl(book.coverImageUrl);
         }
+      }
+    };
 
-        // Fetch description from OpenLibrary if openLibraryId exists
-        if (book.openLibraryId) {
-          setLoadingDescription(true);
-          fetch(`https://openlibrary.org/works/${book.openLibraryId}.json`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.description) {
-                // Handle both string and object formats
-                const desc = typeof data.description === 'string'
-                  ? data.description
-                  : data.description.value;
-                setDescription(desc);
-              }
-            })
-            .catch(() => {
-              setDescription('Description not available.');
-            })
-            .finally(() => {
-              setLoadingDescription(false);
-            });
-        }
-      })
-      .catch(console.error);
-  }, [id]);
+    handleImageCaching();
+  }, [book]);
 
-  if (!book) return <p>Loading...</p>;
+  if (bookLoading) return <p>Loading...</p>;
+  if (bookError || !book) return <p>Error loading book</p>;
 
   return (
     <main className="book-information">
@@ -74,15 +49,18 @@ const BookPage = () => {
         <p>Published: {book.yearPublished}</p>
         <p>Genre: {book.genre}</p>
 
-        {loadingDescription && <p>Loading description...</p>}
+        {descriptionLoading && <p>Loading description...</p>}
         {description && (
           <div className="description">
             <h2>Description</h2>
             <p>{description}</p>
-            <a href={`https://openlibrary.org/works/${book.openLibraryId}`} target="_blank" rel="noopener noreferrer">Description from OpenLibrary</a>
+            <a href={`https://openlibrary.org/works/${book.openLibraryId}`} target="_blank" rel="noopener noreferrer">
+              Description from OpenLibrary
+            </a>
           </div>
         )}
-        {!loadingDescription && !description && <p>No description available.</p>}
+        {descriptionError && <p>Description not available.</p>}
+        {!descriptionLoading && !description && !descriptionError && <p>No description available.</p>}
       </div>
 
       {cachedImageUrl ? (

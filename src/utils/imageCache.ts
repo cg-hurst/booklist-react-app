@@ -63,7 +63,6 @@ class SimpleImageCache {
         if (cursor) {
           const entry = cursor.value as CacheEntry;
           if (Date.now() - entry.timestamp >= this.CACHE_DURATION) {
-            console.log('Cleaning up expired cache entry:', entry.url);
             cursor.delete();
             deletedCount++;
           }
