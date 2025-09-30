@@ -1,5 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { imageCache } from '../utils/imageCache';
+
 import type { Book } from '../types/Book';
 import './BookPage.css';
 
@@ -8,6 +10,7 @@ const BookPage = () => {
   const [book, setBook] = useState<Book | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [loadingDescription, setLoadingDescription] = useState(false);
+  const [cachedImageUrl, setCachedImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -17,9 +20,25 @@ const BookPage = () => {
         if (!res.ok) throw new Error('Failed to fetch book');
         return res.json();
       })
-      .then((book: Book) => {
+      .then(async (book: Book) => {
         setBook(book);
-        
+
+        // Check if image is already cached
+        const cached = imageCache.getCachedImageUrl(book.coverImageUrl);
+        if (cached) {
+          setCachedImageUrl(cached);
+        } else {
+          // Cache the image and get the blob URL
+          try {
+            const blobUrl = await imageCache.preloadImage(book.coverImageUrl);
+            setCachedImageUrl(blobUrl);
+          } catch (error) {
+            console.warn('Failed to cache image:', error);
+            // Fallback to original URL
+            setCachedImageUrl(book.coverImageUrl);
+          }
+        }
+
         // Fetch description from OpenLibrary if openLibraryId exists
         if (book.openLibraryId) {
           setLoadingDescription(true);
@@ -28,8 +47,8 @@ const BookPage = () => {
             .then(data => {
               if (data.description) {
                 // Handle both string and object formats
-                const desc = typeof data.description === 'string' 
-                  ? data.description 
+                const desc = typeof data.description === 'string'
+                  ? data.description
                   : data.description.value;
                 setDescription(desc);
               }
@@ -54,7 +73,7 @@ const BookPage = () => {
         <p>By {book.author}</p>
         <p>Published: {book.yearPublished}</p>
         <p>Genre: {book.genre}</p>
-        
+
         {loadingDescription && <p>Loading description...</p>}
         {description && (
           <div className="description">
@@ -65,7 +84,15 @@ const BookPage = () => {
         )}
         {!loadingDescription && !description && <p>No description available.</p>}
       </div>
-      <img src={book.coverImageUrl} alt={`Cover of ${book.title}`} />
+
+      {cachedImageUrl ? (
+        <img
+          src={cachedImageUrl}
+          alt={`Cover of ${book.title}`}
+        />
+      ) : (
+        <div className="image-placeholder">Loading image...</div>
+      )}
     </main>
   );
 };
