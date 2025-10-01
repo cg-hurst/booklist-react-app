@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { imageCache } from '../utils/imageCache';
 
@@ -12,12 +12,19 @@ interface CarouselProps {
 
 const Carousel = ({ title, books }: CarouselProps) => {
     const [cachedImageUrls, setCachedImageUrls] = useState<Map<number, string>>(new Map());
-
+    const carouselRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
     const handleBookClick = (bookId: number) => {
         navigate(`/book/${bookId}`);
     };
+
+    // Reset scroll position when books change
+    useEffect(() => {
+        if (carouselRef.current) {
+            carouselRef.current.scrollLeft = 0;
+        }
+    }, [books]);
 
     // Cache images individually as they load
     useEffect(() => {
@@ -57,7 +64,7 @@ const Carousel = ({ title, books }: CarouselProps) => {
     return (
         <div className="carousel">
             <h2 className="carousel-title">{title}</h2>
-            <div className="carousel-items">
+            <div className="carousel-items" ref={carouselRef}>
                 {books.map(book => {
                     const cachedUrl = cachedImageUrls.get(book.id);
                     
