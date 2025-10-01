@@ -1,9 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Carousel from '../components/Carousel';
 import type { Book } from '../types/Book';
 
+type SortOption = 'title' | 'newest';
+
 const HomePage = () => {
   const [books, setBooks] = useState<Book[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get sort option from URL params or default to 'title'
+  const sortBy: SortOption = useMemo(() => {
+    const urlSort = searchParams.get('sort');
+    return (urlSort === 'title' || urlSort === 'newest') ? urlSort : 'title';
+  }, [searchParams]);
 
   useEffect(() => {
     fetch('https://localhost:7101/books')
@@ -16,6 +26,25 @@ const HomePage = () => {
       })
       .catch(console.error);
   }, []);
+
+  const sortBooks = (books: Book[], sortOption: SortOption): Book[] => {
+    switch (sortOption) {
+      case 'title':
+        return [...books].sort((a, b) => a.title.localeCompare(b.title));
+      case 'newest':
+        return [...books].sort((a, b) => b.yearPublished - a.yearPublished);
+      default:
+        return books;
+    }
+  };
+
+  const handleSortChange = (newSortOption: SortOption) => {
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('sort', newSortOption);
+      return newParams;
+    });
+  };
 
   const booksByGenre = useMemo(() => {
     const grouped = books.reduce((acc, book) => {
@@ -30,10 +59,10 @@ const HomePage = () => {
     return Object.fromEntries(
       Object.entries(grouped).map(([genre, books]) => [
         genre,
-        books.sort((a, b) => a.title.localeCompare(b.title))
+        sortBooks(books, sortBy)
       ])
     );
-  }, [books]);
+  }, [books, sortBy]);
 
   const genres = useMemo(() => {
     return Object.keys(booksByGenre).sort();
@@ -41,6 +70,16 @@ const HomePage = () => {
 
   return (
     <main>
+      <div>
+        Sort By:
+        <button onClick={() => handleSortChange('title')} className={sortBy === 'title' ? 'active' : ''}>
+          Title
+        </button>
+        <span> | </span>
+        <button onClick={() => handleSortChange('newest')} className={sortBy === 'newest' ? 'active' : ''}>
+          Newest
+        </button>
+      </div>
 
       {/* Genre sections will go here */}
       {genres.map(genre => (
