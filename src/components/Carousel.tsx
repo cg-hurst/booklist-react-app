@@ -24,7 +24,7 @@ const Carousel = ({ title, books }: CarouselProps) => {
         books.forEach(async (book) => {
             try {
                 // Check if already cached in memory
-                const cached = imageCache.getCachedImageUrl(book.coverImageUrl);
+                const cached = await imageCache.getCachedImageUrl(book.coverImageUrl);
                 if (cached) {
                     setCachedImageUrls(prev => new Map(prev).set(book.id, cached));
                 } else {

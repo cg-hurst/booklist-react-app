@@ -4,19 +4,7 @@ interface CacheEntry {
   timestamp: number;
 }
 
-interface GlobalImageCache {
-  cache: Map<string, string>;
-}
-
-// Store cache on window object to persist across reloads
-declare global {
-  interface Window {
-    __imageCache?: GlobalImageCache;
-  }
-}
-
 class SimpleImageCache {
-  private cache = new Map<string, string>();
   private dbName = 'BookImageCache';
   private storeName = 'images';
   private db: IDBDatabase | null = null;
@@ -132,41 +120,33 @@ class SimpleImageCache {
   }
 
   async preloadImage(url: string): Promise<string> {
-    
-    // Check memory cache first
-    if (this.cache.has(url)) {
-      return this.cache.get(url)!;
-    }
-
-    // Check IndexedDB
+    // Check IndexedDB first
     const cachedBlob = await this.getFromDB(url);
     if (cachedBlob) {
-      const objectURL = URL.createObjectURL(cachedBlob);
-      this.cache.set(url, objectURL);
-      return objectURL;
+      return URL.createObjectURL(cachedBlob);
     }
 
     try {
       const response = await fetch(url);
       const blob = await response.blob();
-      const objectURL = URL.createObjectURL(blob);
       
-      // Save to both memory and IndexedDB
-      this.cache.set(url, objectURL);
+      // Save to IndexedDB
       await this.saveToDB(url, blob);
       
-      return objectURL;
+      return URL.createObjectURL(blob);
     } catch (error) {
       throw new Error(`Failed to load image: ${url}`);
     }
   }
 
-  getCachedImageUrl(url: string): string | null {
-    return this.cache.get(url) || null;
+  async getCachedImageUrl(url: string): Promise<string | null> {
+    const cachedBlob = await this.getFromDB(url);
+    return cachedBlob ? URL.createObjectURL(cachedBlob) : null;
   }
 
-  isImageCached(url: string): boolean {
-    return this.cache.has(url);
+  async isImageCached(url: string): Promise<boolean> {
+    const cachedBlob = await this.getFromDB(url);
+    return cachedBlob !== null;
   }
 
   // Get cache statistics
@@ -203,12 +183,6 @@ class SimpleImageCache {
   }
 
   clearCache(): void {
-    // Clean up object URLs to prevent memory leaks
-    this.cache.forEach(objectURL => {
-      URL.revokeObjectURL(objectURL);
-    });
-    this.cache.clear();
-    
     // Clear IndexedDB
     if (this.db) {
       const transaction = this.db.transaction([this.storeName], 'readwrite');

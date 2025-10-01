@@ -1,12 +1,15 @@
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useBook, useBookDescription } from '../hooks/useBooks';
+import { useNavigate } from 'react-router-dom';
 import { imageCache } from '../utils/imageCache';
 import './BookPage.css';
 
 const BookPage = () => {
   const { id } = useParams<{ id: string }>();
   const [cachedImageUrl, setCachedImageUrl] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   // Use React Query for book data
   const { data: book, isLoading: bookLoading, error: bookError } = useBook(id);
@@ -19,7 +22,7 @@ const BookPage = () => {
 
     const handleImageCaching = async () => {
       // Check if image is already cached
-      const cached = imageCache.getCachedImageUrl(book.coverImageUrl);
+      const cached = await imageCache.getCachedImageUrl(book.coverImageUrl);
       if (cached) {
         setCachedImageUrl(cached);
       } else {
@@ -42,36 +45,39 @@ const BookPage = () => {
   if (bookError || !book) return <p>Error loading book</p>;
 
   return (
-    <main className="book-information">
-      <div className='book-content'>
-        <h1>{book.title}</h1>
-        <p>By {book.author}</p>
-        <p>Published: {book.yearPublished}</p>
-        <p>Genre: {book.genre}</p>
+    <>
+      <nav><a href="#" onClick={() => navigate(-1)} >Back to list</a></nav>
+      <main className="book-information">
+        <div className='book-content'>
+          <h1>{book.title}</h1>
+          <p>By {book.author}</p>
+          <p>Published: {book.yearPublished}</p>
+          <p>Genre: {book.genre}</p>
 
-        {descriptionLoading && <p>Loading description...</p>}
-        {description && (
-          <div className="description">
-            <h2>Description</h2>
-            <p>{description}</p>
-            <a href={`https://openlibrary.org/works/${book.openLibraryId}`} target="_blank" rel="noopener noreferrer">
-              Description from OpenLibrary
-            </a>
-          </div>
+          {descriptionLoading && <p>Loading description...</p>}
+          {description && (
+            <div className="description">
+              <h2>Description</h2>
+              <p>{description}</p>
+              <a href={`https://openlibrary.org/works/${book.openLibraryId}`} target="_blank" rel="noopener noreferrer">
+                Description from OpenLibrary
+              </a>
+            </div>
+          )}
+          {descriptionError && <p>Description not available.</p>}
+          {!descriptionLoading && !description && !descriptionError && <p>No description available.</p>}
+        </div>
+
+        {cachedImageUrl ? (
+          <img
+            src={cachedImageUrl}
+            alt={`Cover of ${book.title}`}
+          />
+        ) : (
+          <div className="image-placeholder">Loading image...</div>
         )}
-        {descriptionError && <p>Description not available.</p>}
-        {!descriptionLoading && !description && !descriptionError && <p>No description available.</p>}
-      </div>
-
-      {cachedImageUrl ? (
-        <img
-          src={cachedImageUrl}
-          alt={`Cover of ${book.title}`}
-        />
-      ) : (
-        <div className="image-placeholder">Loading image...</div>
-      )}
-    </main>
+      </main>
+    </>
   );
 };
 
