@@ -20,25 +20,30 @@ const BookPage = () => {
   useEffect(() => {
     if (!book) return;
 
+    let objectUrl: string | null = null;
+
     const handleImageCaching = async () => {
-      // Check if image is already cached
-      const cached = await imageCache.getCachedImageUrl(book.coverImageUrl);
-      if (cached) {
-        setCachedImageUrl(cached);
-      } else {
-        // Cache the image and get the blob URL
-        try {
-          const blobUrl = await imageCache.preloadImage(book.coverImageUrl);
-          setCachedImageUrl(blobUrl);
-        } catch (error) {
-          console.warn('Failed to cache image:', error);
-          // Fallback to original URL
-          setCachedImageUrl(book.coverImageUrl);
-        }
+      try {
+        // Get blob from cache and create object URL
+        const blob = await imageCache.preloadImage(book.coverImageUrl);
+        objectUrl = URL.createObjectURL(blob);
+        setCachedImageUrl(objectUrl);
+      } catch (error) {
+        console.warn('Failed to cache image:', error);
+        // Fallback to original URL (no cleanup needed)
+        setCachedImageUrl(book.coverImageUrl);
       }
     };
 
     handleImageCaching();
+
+    // Cleanup function to revoke object URL
+    return () => {
+      if (objectUrl && objectUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      setCachedImageUrl(null);
+    };
   }, [book]);
 
   if (bookLoading) return <p>Loading...</p>;

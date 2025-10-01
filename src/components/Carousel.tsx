@@ -21,6 +21,18 @@ const Carousel = ({ title, books }: CarouselProps) => {
 
     // Cache images individually as they load
     useEffect(() => {
+        // Cleanup function to revoke object URLs when component unmounts or books change
+        const cleanup = () => {
+            cachedImageUrls.forEach(url => {
+                if (url.startsWith('blob:')) {
+                    URL.revokeObjectURL(url);
+                }
+            });
+            setCachedImageUrls(new Map());
+        };
+
+        cleanup();
+
         books.forEach(async (book) => {
             try {
                 // Check if already cached in memory
@@ -29,8 +41,8 @@ const Carousel = ({ title, books }: CarouselProps) => {
                     setCachedImageUrls(prev => new Map(prev).set(book.id, cached));
                 } else {
                     // Cache the image and get the blob URL
-                    const blobUrl = await imageCache.preloadImage(book.coverImageUrl);
-                    setCachedImageUrls(prev => new Map(prev).set(book.id, blobUrl));
+                    const blob = await imageCache.preloadImage(book.coverImageUrl);
+                    setCachedImageUrls(prev => new Map(prev).set(book.id, URL.createObjectURL(blob)));
                 }
             } catch (error) {
                 console.warn(`Failed to cache image for ${book.title}:`, error);
@@ -38,6 +50,8 @@ const Carousel = ({ title, books }: CarouselProps) => {
                 setCachedImageUrls(prev => new Map(prev).set(book.id, book.coverImageUrl));
             }
         });
+
+        return cleanup;
     }, [books]);
 
     return (

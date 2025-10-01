@@ -119,24 +119,24 @@ class SimpleImageCache {
     });
   }
 
-  async preloadImage(url: string): Promise<string> {
-    // Check IndexedDB first
+  async preloadImage(url: string): Promise<Blob> {
     const cachedBlob = await this.getFromDB(url);
     if (cachedBlob) {
-      return URL.createObjectURL(cachedBlob);
+      return cachedBlob;
     }
 
     try {
       const response = await fetch(url);
       const blob = await response.blob();
-      
-      // Save to IndexedDB
       await this.saveToDB(url, blob);
-      
-      return URL.createObjectURL(blob);
+      return blob;
     } catch (error) {
       throw new Error(`Failed to load image: ${url}`);
     }
+  }
+
+  async getCachedBlob(url: string): Promise<Blob | null> {
+    return await this.getFromDB(url);
   }
 
   async getCachedImageUrl(url: string): Promise<string | null> {
