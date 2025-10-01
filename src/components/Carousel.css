@@ -1,7 +1,7 @@
 .carousel {
     margin-bottom: 2rem;
     max-width: 90vw;
-    overflow: scroll-x;;
+    overflow: scroll-x;
 }
 
 .carousel-title {
@@ -47,6 +47,9 @@
     scroll-snap-align: start; /* Snap to start of each item */
     cursor: pointer;
     transition: transform 0.2s ease;
+    /* Add flexbox to align content */
+    display: flex;
+    flex-direction: column;
 }
 
 .carousel-item:hover {
@@ -59,7 +62,9 @@
     object-fit: cover;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 0.5rem;
+    background-color: #aaa;
+    /* Push image to bottom of container */
+    margin-top: auto;
 }
 
 .carousel-item-info {
@@ -81,7 +86,7 @@
 .carousel-item-info p {
     font-size: 0.8rem;
     color: #666;
-    margin: 0;
+    margin: 0 0 0.5rem 0;
     /* Truncate long author names */
     white-space: nowrap;
     overflow: hidden;

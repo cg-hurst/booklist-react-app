@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Carousel from '../components/Carousel';
 import type { Book } from '../types/Book';
+import './HomePage.css';
 
 type SortOption = 'title' | 'newest';
 
@@ -70,8 +71,8 @@ const HomePage = () => {
 
   return (
     <main>
-      <div>
-        Sort By:
+      <div className="sort-options">
+        <span>Sort By:</span>
         <button onClick={() => handleSortChange('title')} className={sortBy === 'title' ? 'active' : ''}>
           Title
         </button>
