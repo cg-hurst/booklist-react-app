@@ -150,6 +150,6 @@
   }
   
   .carousel-item-image {
-    @apply w-full h-56 object-cover rounded-lg shadow-lg bg-surface mt-auto;
+    @apply w-full h-56 object-cover rounded-lg bg-surface mt-auto;
   }
 }

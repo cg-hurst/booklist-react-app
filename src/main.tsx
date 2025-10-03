@@ -22,12 +22,12 @@ const persister = createAsyncStoragePersister({
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <PersistQueryClientProvider 
-      client={queryClient} 
+    <PersistQueryClientProvider
+      client={queryClient}
       persistOptions={{ persister }}
     >
       <App />
       <ReactQueryDevtools initialIsOpen={false} />
     </PersistQueryClientProvider>
-  </React.StrictMode>,
+  </React.StrictMode>
 )

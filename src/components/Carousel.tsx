@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { Book } from '../types/Book';
+import OpenLibraryImage from './OpenLibraryImage';
 
 interface CarouselProps {
   title: string;
@@ -123,12 +124,10 @@ const Carousel = ({ title, books }: CarouselProps) => {
               <h3 className="carousel-item-title">{book.title}</h3>
               <p className="carousel-item-author">{book.author}</p>
             </div>
-            <img
-              src={book.coverImageUrl || '/placeholder-book.jpg'}
-              alt={`${book.title} cover`}
-              className="carousel-item-image"
-              loading="lazy"
-            />
+
+            <div className="carousel-item-image">
+              <OpenLibraryImage coverImageUrl={book.coverImageUrl} widthClass="w-36" heightClass="h-full" />
+            </div>
           </Link>
         ))}
       </div>

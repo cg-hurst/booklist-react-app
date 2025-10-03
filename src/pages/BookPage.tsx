@@ -1,49 +1,15 @@
 import { Link, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import { useBook, useBookDescription } from '../hooks/useBooks';
-import { useNavigate } from 'react-router-dom';
-import { imageCache } from '../utils/imageCache';
+import OpenLibraryImage from '../components/OpenLibraryImage';
 
 const BookPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [cachedImageUrl, setCachedImageUrl] = useState<string | null>(null);
-
-  const navigate = useNavigate();
 
   // Use React Query for book data
   const { data: book, isLoading: bookLoading, error: bookError } = useBook(id);
 
   // Use React Query for description data
   const { data: description, isLoading: descriptionLoading, error: descriptionError } = useBookDescription(book?.openLibraryId);
-
-  useEffect(() => {
-    if (!book) return;
-
-    let objectUrl: string | null = null;
-
-    const handleImageCaching = async () => {
-      try {
-        // Get blob from cache and create object URL
-        const blob = await imageCache.preloadImage(book.coverImageUrl);
-        objectUrl = URL.createObjectURL(blob);
-        setCachedImageUrl(objectUrl);
-      } catch (error) {
-        console.warn('Failed to cache image:', error);
-        // Fallback to original URL (no cleanup needed)
-        setCachedImageUrl(book.coverImageUrl);
-      }
-    };
-
-    handleImageCaching();
-
-    // Cleanup function to revoke object URL
-    return () => {
-      if (objectUrl && objectUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(objectUrl);
-      }
-      setCachedImageUrl(null);
-    };
-  }, [book]);
 
   if (bookLoading)
     return (
@@ -128,16 +94,7 @@ const BookPage = () => {
           </div>
 
           <div className="md:col-span-1 order-first">
-            {cachedImageUrl ? (
-
-              <img
-                src={cachedImageUrl}
-                alt={`Cover of ${book.title}`}
-                className="w-100 h-auto rounded-lg shadow-lg bg-surface"
-              />
-            ) : (
-              <div className="image-placeholder">Loading image...</div>
-            )}
+            <OpenLibraryImage coverImageUrl={book.coverImageUrl} />
           </div>
         </main>
       </div>
