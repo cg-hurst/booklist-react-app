@@ -1,93 +1,139 @@
-import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { imageCache } from '../utils/imageCache';
-
-import type { Book } from "../types/Book";
-import './Carousel.css';
+import { useRef, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import type { Book } from '../types/Book';
 
 interface CarouselProps {
-    title: string;
-    books: Book[];
+  title: string;
+  books: Book[];
 }
 
 const Carousel = ({ title, books }: CarouselProps) => {
-    const [cachedImageUrls, setCachedImageUrls] = useState<Map<number, string>>(new Map());
-    const carouselRef = useRef<HTMLDivElement>(null);
-    const navigate = useNavigate();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
-    const handleBookClick = (bookId: number) => {
-        navigate(`/book/${bookId}`);
-    };
+  const checkScrollButtons = () => {
+    if (!scrollContainerRef.current) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+  };
 
-    // Reset scroll position when books change
-    useEffect(() => {
-        if (carouselRef.current) {
-            carouselRef.current.scrollLeft = 0;
-        }
-    }, [books]);
+  useEffect(() => {
+    checkScrollButtons();
+    window.addEventListener('resize', checkScrollButtons);
 
-    // Cache images individually as they load
-    useEffect(() => {
-        // Cleanup function to revoke object URLs when component unmounts or books change
-        const cleanup = () => {
-            cachedImageUrls.forEach(url => {
-                if (url.startsWith('blob:')) {
-                    URL.revokeObjectURL(url);
-                }
-            });
-            setCachedImageUrls(new Map());
-        };
+    // When books change scroll back to start
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = 0;
+    }
 
-        cleanup();
+    return () => window.removeEventListener('resize', checkScrollButtons);
+  }, [books]);
 
-        books.forEach(async (book) => {
-            try {
-                // Check if already cached in memory
-                const cached = await imageCache.getCachedImageUrl(book.coverImageUrl);
-                if (cached) {
-                    setCachedImageUrls(prev => new Map(prev).set(book.id, cached));
-                } else {
-                    // Cache the image and get the blob URL
-                    const blob = await imageCache.preloadImage(book.coverImageUrl);
-                    setCachedImageUrls(prev => new Map(prev).set(book.id, URL.createObjectURL(blob)));
-                }
-            } catch (error) {
-                console.warn(`Failed to cache image for ${book.title}:`, error);
-                // Fallback to original URL
-                setCachedImageUrls(prev => new Map(prev).set(book.id, book.coverImageUrl));
-            }
-        });
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollContainerRef.current) return;
+    
+    const container = scrollContainerRef.current;
+    const containerWidth = container.clientWidth;
+    const currentScroll = container.scrollLeft;
+    
+    // Book item width is 144px (w-36) + 16px gap = 160px total per item
+    const itemWidth = 144; // w-36 in pixels
+    const gap = 16; // 1rem gap
+    const totalItemWidth = itemWidth + gap;
+    
+    // Calculate how many complete books fit in the visible area
+    const booksPerPage = Math.floor(containerWidth / totalItemWidth);
+    
+    // Calculate scroll distance (number of books * total width per book)
+    const scrollDistance = booksPerPage * totalItemWidth;
+    
+    let targetScroll;
+    if (direction === 'left') {
+      targetScroll = Math.max(0, currentScroll - scrollDistance);
+    } else {
+      targetScroll = currentScroll + scrollDistance;
+      
+      // Don't scroll past the end
+      const maxScroll = container.scrollWidth - containerWidth;
+      targetScroll = Math.min(targetScroll, maxScroll);
+      
+      // If we're close to the end, just scroll to show remaining items
+      if (maxScroll - targetScroll < totalItemWidth) {
+        targetScroll = maxScroll;
+      }
+    }
+    
+    container.scrollTo({
+      left: targetScroll,
+      behavior: 'smooth'
+    });
+  };
 
-        return cleanup;
-    }, [books]);
+  if (books.length === 0) return null;
 
-    return (
-        <div className="carousel">
-            <h2 className="carousel-title">{title}</h2>
-            <div className="carousel-items" ref={carouselRef}>
-                {books.map(book => {
-                    const cachedUrl = cachedImageUrls.get(book.id);
-                    
-                    return (
-                        <div key={book.id} className="carousel-item" onClick={() => handleBookClick(book.id)}>
-                            <div className="carousel-item-info">
-                                <h3>{book.title}</h3>
-                                <p>{book.author}</p>
-                            </div>
-                            {cachedUrl ? (
-                                <img 
-                                    src={cachedUrl} 
-                                    alt={book.title}
-                                />
-                            ) : (
-                                <div className="image-placeholder">Loading...</div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
+  return (
+    <section className="carousel group">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="carousel-title">{title}</h2>
+        
+        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            onClick={() => scroll('left')}
+            disabled={!canScrollLeft}
+            className={`p-2 rounded-full transition-colors ${
+              canScrollLeft 
+                ? 'bg-surface hover:bg-surface-hover text-text' 
+                : 'bg-surface/50 text-text-muted cursor-not-allowed'
+            }`}
+            aria-label="Scroll left"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={() => scroll('right')}
+            disabled={!canScrollRight}
+            className={`p-2 rounded-full transition-colors ${
+              canScrollRight 
+                ? 'bg-surface hover:bg-surface-hover text-text' 
+                : 'bg-surface/50 text-text-muted cursor-not-allowed'
+            }`}
+            aria-label="Scroll right"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
-    );
+      </div>
+      
+      <div 
+        ref={scrollContainerRef}
+        className="carousel-items"
+        onScroll={checkScrollButtons}
+      >
+        {books.map((book) => (
+          <Link key={book.id} to={`/book/${book.id}`} className="carousel-item">
+            <div className="carousel-item-info">
+              <h3 className="carousel-item-title">{book.title}</h3>
+              <p className="carousel-item-author">{book.author}</p>
+            </div>
+            <img
+              src={book.coverImageUrl || '/placeholder-book.jpg'}
+              alt={`${book.title} cover`}
+              className="carousel-item-image"
+              loading="lazy"
+            />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
 };
 
 export default Carousel;

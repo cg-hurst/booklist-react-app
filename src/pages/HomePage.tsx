@@ -2,14 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Carousel from '../components/Carousel';
 import type { Book } from '../types/Book';
-import './HomePage.css';
 
 type SortOption = 'title' | 'newest';
 
 const HomePage = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // Get sort option from URL params or default to 'title'
   const sortBy: SortOption = useMemo(() => {
     const urlSort = searchParams.get('sort');
@@ -70,24 +69,41 @@ const HomePage = () => {
   }, [booksByGenre]);
 
   return (
-    <main>
-      <div className="sort-options">
-        <span>Sort By:</span>
-        <button onClick={() => handleSortChange('title')} className={sortBy === 'title' ? 'active' : ''}>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Sort controls */}
+      <div className="mb-8 flex items-center gap-3">
+        <span className="text-text-secondary font-medium">Sort By:</span>
+        <button 
+          onClick={() => handleSortChange('title')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            sortBy === 'title'
+              ? 'bg-primary text-white'
+              : 'bg-surface hover:bg-surface-hover text-text-secondary'
+          }`}
+        >
           Title
         </button>
-        <span> | </span>
-        <button onClick={() => handleSortChange('newest')} className={sortBy === 'newest' ? 'active' : ''}>
+        <span className="text-text-muted">|</span>
+        <button 
+          onClick={() => handleSortChange('newest')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            sortBy === 'newest'
+              ? 'bg-primary text-white'
+              : 'bg-surface hover:bg-surface-hover text-text-secondary'
+          }`}
+        >
           Newest
         </button>
       </div>
 
-      {/* Genre sections will go here */}
-      {genres.map(genre => (
-        <section key={genre}>
-          <Carousel title={genre} books={booksByGenre[genre]} />
-        </section>
-      ))}
+      {/* Genre sections */}
+      <div className="space-y-8">
+        {genres.map(genre => (
+          <section key={genre}>
+            <Carousel title={genre} books={booksByGenre[genre]} />
+          </section>
+        ))}
+      </div>
     </main>
   );
 };
