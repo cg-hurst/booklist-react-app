@@ -35,8 +35,7 @@ const BookPage = () => {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto p-8">
-
+      <div>
         <Link
           to="/"
           className="inline-flex items-center gap-2 mb-6 text-text-secondary hover:text-text transition-colors"
@@ -48,7 +47,7 @@ const BookPage = () => {
         </Link>
 
 
-        <main className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
           {/* Book details */}
           <div className="md:col-span-2 space-y-6">
             <div>
@@ -94,9 +93,9 @@ const BookPage = () => {
           </div>
 
           <div className="md:col-span-1 order-first">
-            <OpenLibraryImage coverImageUrl={book.coverImageUrl} />
+            <OpenLibraryImage coverImageUrl={book.coverImageUrl} widthClass='w-full' heightClass='h-auto' />
           </div>
-        </main>
+        </div>
       </div>
     </>
   );

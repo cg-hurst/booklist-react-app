@@ -64,6 +64,8 @@
     background-color: var(--color-background);
     color: var(--color-text);
     transition: background-color 0.2s ease, color 0.2s ease;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
   }
 }
 
@@ -107,8 +109,6 @@
   
   .carousel-items {
     @apply flex overflow-x-auto overflow-y-hidden py-2 gap-4 scroll-smooth;
-    scrollbar-width: thin;
-    -ms-overflow-style: none;
     scrollbar-width: none;
     /* Improve scroll snapping */
     scroll-snap-type: x proximity;
@@ -131,7 +131,7 @@
   }
   
   .carousel-item {
-    @apply flex-shrink-0 w-36 cursor-pointer transition-transform duration-200 hover:scale-105 flex flex-col;
+    @apply flex-shrink-0 w-36 cursor-pointer flex flex-col;
     /* Snap to start of item */
     scroll-snap-align: start;
     scroll-snap-stop: normal;
@@ -150,6 +150,6 @@
   }
   
   .carousel-item-image {
-    @apply w-full h-56 object-cover rounded-lg bg-surface mt-auto;
+    @apply w-full h-56 object-cover rounded-lg bg-surface mt-auto transition-transform duration-200 hover:scale-105;
   }
 }
