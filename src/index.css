@@ -107,49 +107,49 @@
     @apply text-2xl font-bold mb-4 text-text;
   }
   
-  .carousel-items {
+  .book-cards {
     @apply flex overflow-x-auto overflow-y-hidden py-2 gap-4 scroll-smooth;
     scrollbar-width: none;
     /* Improve scroll snapping */
     scroll-snap-type: x proximity;
   }
   
-  .carousel-items::-webkit-scrollbar {
+  .book-cards::-webkit-scrollbar {
     height: 6px;
   }
   
-  .carousel-items::-webkit-scrollbar-track {
+  .book-cards::-webkit-scrollbar-track {
     @apply bg-surface rounded;
   }
   
-  .carousel-items::-webkit-scrollbar-thumb {
+  .book-cards::-webkit-scrollbar-thumb {
     @apply bg-border rounded;
   }
   
-  .carousel-items::-webkit-scrollbar-thumb:hover {
+  .book-cards::-webkit-scrollbar-thumb:hover {
     @apply bg-text-muted;
   }
   
-  .carousel-item {
+  .book-card {
     @apply flex-shrink-0 w-36 cursor-pointer flex flex-col;
     /* Snap to start of item */
     scroll-snap-align: start;
     scroll-snap-stop: normal;
   }
   
-  .carousel-item-info {
+  .book-card-info {
     @apply text-center mb-2;
   }
   
-  .carousel-item-title {
+  .book-card-title {
     @apply text-sm font-semibold text-text mb-1 leading-tight line-clamp-2;
   }
   
-  .carousel-item-author {
+  .book-card-author {
     @apply text-xs text-text-secondary mb-2 truncate;
   }
   
-  .carousel-item-image {
+  .book-card-image {
     @apply w-full h-56 object-cover rounded-lg bg-surface mt-auto transition-transform duration-200 hover:scale-105;
   }
 }

@@ -7,6 +7,7 @@ interface AuthContextType {
     login: (token: string) => void;
     logout: () => void;
     refresh: () => void;
+    fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>;
     loading: boolean;
 }
 
@@ -47,6 +48,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setToken(null);
     };
 
+    const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+
+        const makeRequest = (authToken: string | null) => {
+            const headers = new Headers(options.headers);
+            if (authToken) {
+                headers.set('Authorization', `Bearer ${authToken}`);
+            }
+            return fetch(url, { ...options, headers });
+        };
+
+        // First attempt with current token
+        let response = await makeRequest(token);
+
+        // If we get 401 and have a token, try to refresh
+        if (response.status === 401 && token) {
+            console.log('Got 401, attempting token refresh...');
+            const refreshSuccess = await refresh();
+
+            if (refreshSuccess) {
+                // Retry with the new token
+                const newToken = localStorage.getItem('token');
+                response = await makeRequest(newToken);
+                console.log('Retried request after refresh, status:', response.status);
+            } else {
+                console.log('Refresh failed, user will be logged out');
+                logout();
+            }
+        }
+
+        return response;
+
+    };
+
     const refresh = () => {
         fetch('https://localhost:7101/refresh', {
             method: 'POST',
@@ -55,22 +89,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 'Content-Type': 'application/json'
             }
         }).then(response => response.json())
-          .then(data => {
-              if (data.token) {
-                  login(data.token);
-              } else {
-                  logout();
-              }
-          })
-          .catch(() => {
-              logout();
-          });
+            .then(data => {
+                if (data.token) {
+                    login(data.token);
+                    return true;
+                } else {
+                    logout();
+                }
+            })
+            .catch(() => {
+                logout();
+            });
+        return false;
     }
 
     const isAuthenticated = !!token;
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, token, login, logout, loading, refresh }}>
+        <AuthContext.Provider value={{ isAuthenticated, token, login, logout, loading, refresh, fetchWithAuth }}>
             {children}
         </AuthContext.Provider>
     );

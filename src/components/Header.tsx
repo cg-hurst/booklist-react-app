@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [isDark, setIsDark] = useState(false);
-  const { isAuthenticated, logout, refresh } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     // Check system preference or saved preference
@@ -36,14 +37,14 @@ const Header = () => {
                 Logout
               </button>
 
-              <button className="text-sm text-text-muted hover:text-primary" onClick={refresh}>
-                Refresh
-              </button>
+              <Link to="/admin" className="text-sm text-text-muted hover:text-primary">
+                Admin
+              </Link>
             </>
           ) : (
-            <a href="/login" className="text-sm text-text-muted hover:text-primary">
+            <Link to="/login" className="text-sm text-text-muted hover:text-primary">
               Login
-            </a>
+            </Link>
           )}
           <button
             onClick={toggleTheme}

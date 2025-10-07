@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import type { Book } from '../types/Book';
-import OpenLibraryImage from './OpenLibraryImage';
+import BookCard from './BookCard';
 
 interface CarouselProps {
   title: string;
@@ -115,20 +114,11 @@ const Carousel = ({ title, books }: CarouselProps) => {
       
       <div 
         ref={scrollContainerRef}
-        className="carousel-items"
+        className="book-cards"
         onScroll={checkScrollButtons}
       >
         {books.map((book) => (
-          <Link key={book.id} to={`/book/${book.id}`} className="carousel-item">
-            <div className="carousel-item-info">
-              <h3 className="carousel-item-title">{book.title}</h3>
-              <p className="carousel-item-author">{book.author}</p>
-            </div>
-
-            <div className="carousel-item-image">
-              <OpenLibraryImage coverImageUrl={book.coverImageUrl} widthClass="w-36" heightClass="h-full" />
-            </div>
-          </Link>
+          <BookCard key={book.id} book={book} />
         ))}
       </div>
     </section>
