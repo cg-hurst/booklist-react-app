@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react"
 import type { Book } from "../types/Book";
 import BookCard from "../components/BookCard";
 import { useAuth } from "../context/AuthContext";
-import { Navigate } from "react-router-dom";
 import { Notifications, type NotificationFunctions } from "../components/Notifications";
 
 interface NewBook {
@@ -117,13 +116,6 @@ const AdminPage = () => {
             notificationsRef.current?.addNotification('Failed to add book', "error");
         }
     }
-
-    // Redirect if not authenticated
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
-    }
-
-
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

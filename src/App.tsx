@@ -5,6 +5,7 @@ import BookPage from './pages/BookPage';
 import LoginPage from './pages/LoginPage';
 import { AuthProvider } from './context/AuthContext';
 import AdminPage from './pages/AdminPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -17,7 +18,10 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/book/:id" element={<BookPage />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>} />
             </Routes>
           </main>
         </div>

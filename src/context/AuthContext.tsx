@@ -81,25 +81,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     };
 
-    const refresh = () => {
-        fetch('https://localhost:7101/refresh', {
+    const refresh = async () => {
+        const response = await fetch('https://localhost:7101/refresh', {
             method: 'POST',
             credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             }
-        }).then(response => response.json())
-            .then(data => {
-                if (data.token) {
-                    login(data.token);
-                    return true;
-                } else {
-                    logout();
-                }
-            })
-            .catch(() => {
-                logout();
-            });
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.token) {
+                login(data.token);
+                return true;
+            }
+        }
+        
+        logout();
         return false;
     }
 
