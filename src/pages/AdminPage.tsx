@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { Book } from "../types/Book";
 import BookCard from "../components/BookCard";
 import { useAuth } from "../context/AuthContext";
 import { Navigate } from "react-router-dom";
+import { Notifications, type NotificationFunctions } from "../components/Notifications";
 
 interface NewBook {
     title: string;
@@ -20,6 +21,7 @@ const AdminPage = () => {
     const { isAuthenticated, fetchWithAuth } = useAuth();
 
     const [newBook, setNewBook] = useState<NewBook | null>(null);
+    const notificationsRef = useRef<NotificationFunctions>(null);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -34,6 +36,14 @@ const AdminPage = () => {
             })
             .catch(console.error);
     }, []);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setBooks([]);
+            setDeleteBook(null);
+            setNewBook(null);
+        }
+    }, [isAuthenticated]);
 
     const handleDelete = (book: Book): void => {
         setDeleteBook(book);
@@ -52,9 +62,12 @@ const AdminPage = () => {
             }).then(res => {
                 if (!res.ok) throw new Error('Delete failed');
 
+                notificationsRef.current?.addNotification(`Deleted "${deleteBook.title}"`, "success");
+
                 // Remove from local state
                 setBooks(books => books.filter(book => book.id !== deleteBook.id));
                 setDeleteBook(null);
+
             });
         } catch (error) {
             console.error('Delete failed:', error);
@@ -95,11 +108,13 @@ const AdminPage = () => {
                 if (!res.ok) throw new Error('Add book failed');
                 return res.json();
             }).then((createdBook: Book) => {
+                notificationsRef.current?.addNotification(`Added "${createdBook.title}"`, "success");
                 setBooks(books => [...books, createdBook].sort((a, b) => a.title.localeCompare(b.title)));
                 setNewBook(null);
             });
         } catch (error) {
-            console.error('Failed to add book:', error);
+            setNewBook(null);
+            notificationsRef.current?.addNotification('Failed to add book', "error");
         }
     }
 
@@ -117,14 +132,14 @@ const AdminPage = () => {
                 <button onClick={showAddBookModal} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors">Add new book</button>
             </div>
 
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 gap-y-12">
                 {books.map((book) => (
                     <div key={book.id} className="flex flex-col h-full">
                         <div className="flex-1 flex items-center justify-center">
                             <BookCard book={book} />
                         </div>
 
-                        <div className="mt-3 flex gap-2 items-center justify-center">
+                        <div className="mt-1 flex gap-2 items-center justify-center">
                             <button
                                 onClick={() => handleDelete(book)}
                                 className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
@@ -261,6 +276,8 @@ const AdminPage = () => {
                     </div>
                 </div>
             )}
+
+            <Notifications ref={notificationsRef} />
         </div>
     );
 }
