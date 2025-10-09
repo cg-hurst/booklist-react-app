@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Carousel from '../components/Carousel';
 import type { Book } from '../types/Book';
+import { useBooks } from '../hooks/useBooks';
 
 type SortOption = 'title' | 'newest';
 
@@ -15,17 +16,8 @@ const HomePage = () => {
     return (urlSort === 'title' || urlSort === 'newest') ? urlSort : 'title';
   }, [searchParams]);
 
-  useEffect(() => {
-    fetch('https://localhost:7101/books')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch books');
-        return res.json();
-      })
-      .then((data: Book[]) => {
-        setBooks(data);
-      })
-      .catch(console.error);
-  }, []);
+  const { data: booksData } = useBooks();
+  useEffect(() => void (booksData && setBooks(booksData)), [booksData]);
 
   const sortBooks = (books: Book[], sortOption: SortOption): Book[] => {
     switch (sortOption) {

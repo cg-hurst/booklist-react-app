@@ -3,6 +3,8 @@ import type { Book } from "../types/Book";
 import BookCard from "../components/BookCard";
 import { useAuth } from "../context/AuthContext";
 import { Notifications, type NotificationFunctions } from "../components/Notifications";
+import { useQueryClient } from "@tanstack/react-query";
+import { useBooks } from "../hooks/useBooks";
 
 interface NewBook {
     title: string;
@@ -17,32 +19,15 @@ const AdminPage = () => {
 
     const [books, setBooks] = useState<Book[]>([]);
     const [deleteBook, setDeleteBook] = useState<Book | null>(null);
-    const { isAuthenticated, fetchWithAuth } = useAuth();
+    const { fetchWithAuth } = useAuth();
 
     const [newBook, setNewBook] = useState<NewBook | null>(null);
     const notificationsRef = useRef<NotificationFunctions>(null);
+    const queryClient = useQueryClient();
 
-    useEffect(() => {
-        if (!isAuthenticated) return;
-
-        fetch('https://localhost:7101/books')
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch books');
-                return res.json();
-            })
-            .then((data: Book[]) => {
-                setBooks(data.sort((a, b) => a.title.localeCompare(b.title)));
-            })
-            .catch(console.error);
-    }, []);
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            setBooks([]);
-            setDeleteBook(null);
-            setNewBook(null);
-        }
-    }, [isAuthenticated]);
+    ;
+    const { data: booksData } = useBooks();
+    useEffect(() => void (booksData && setBooks(booksData.sort((a, b) => a.title.localeCompare(b.title)))), [booksData]);
 
     const handleDelete = (book: Book): void => {
         setDeleteBook(book);
@@ -64,9 +49,11 @@ const AdminPage = () => {
                 notificationsRef.current?.addNotification(`Deleted "${deleteBook.title}"`, "success");
 
                 // Remove from local state
+                queryClient.invalidateQueries({ queryKey: ['books'] });
+                queryClient.invalidateQueries({ queryKey: ['book', deleteBook.id] });
+                queryClient.invalidateQueries({ queryKey: ['description', deleteBook.openLibraryId] });
                 setBooks(books => books.filter(book => book.id !== deleteBook.id));
                 setDeleteBook(null);
-
             });
         } catch (error) {
             console.error('Delete failed:', error);
@@ -110,6 +97,8 @@ const AdminPage = () => {
                 notificationsRef.current?.addNotification(`Added "${createdBook.title}"`, "success");
                 setBooks(books => [...books, createdBook].sort((a, b) => a.title.localeCompare(b.title)));
                 setNewBook(null);
+                // Clear useBooks react cache
+                queryClient.invalidateQueries({ queryKey: ['books'] });
             });
         } catch (error) {
             setNewBook(null);
