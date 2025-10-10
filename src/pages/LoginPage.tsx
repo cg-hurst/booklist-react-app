@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import API_ENDPOINTS from "../utils/apiConfig";
 
 const LoginPage = () => {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -14,7 +15,7 @@ const LoginPage = () => {
         const username = (document.getElementById("username") as HTMLInputElement).value;
         const password = (document.getElementById("password") as HTMLInputElement).value;
 
-        fetch('https://localhost:7101/login', {
+        fetch(API_ENDPOINTS.LOGIN, {
             method: 'POST',
             credentials: 'include',
             headers: {

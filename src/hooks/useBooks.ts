@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Book } from '../types/Book';
+import API_ENDPOINTS from '../utils/apiConfig';
 
 export const useBooks = () => {
   return useQuery({
     queryKey: ['books'],
     queryFn: async (): Promise<Book[]> => {
-      const res = await fetch('https://localhost:7101/books');
+      const res = await fetch(API_ENDPOINTS.BOOKS);
       if (!res.ok) throw new Error('Failed to fetch books');
       return res.json();
     },
@@ -16,7 +17,7 @@ export const useBook = (id: string | undefined) => {
   return useQuery({
     queryKey: ['book', id],
     queryFn: async (): Promise<Book> => {
-      const res = await fetch(`https://localhost:7101/books/${id}`);
+      const res = await fetch(`${API_ENDPOINTS.BOOKS}/${id}`);
       if (!res.ok) throw new Error('Failed to fetch book');
       return res.json();
     },

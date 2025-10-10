@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import API_ENDPOINTS from '../utils/apiConfig';
 
 interface AuthContextType {
     isAuthenticated: boolean;
@@ -82,7 +83,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     const refresh = async () => {
-        const response = await fetch('https://localhost:7101/refresh', {
+        const response = await fetch(API_ENDPOINTS.REFRESH, {
             method: 'POST',
             credentials: 'include',
             headers: {

@@ -5,15 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import { Notifications, type NotificationFunctions } from "../components/Notifications";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBooks } from "../hooks/useBooks";
-
-interface NewBook {
-    title: string;
-    author: string;
-    genre: string;
-    yearPublished: number;
-    coverImageUrl: string;
-    openLibraryId: string;
-}
+import AddBookForm from "../components/AddBookForm";
+import { API_ENDPOINTS } from "../utils/apiConfig";
 
 const AdminPage = () => {
 
@@ -21,7 +14,6 @@ const AdminPage = () => {
     const [deleteBook, setDeleteBook] = useState<Book | null>(null);
     const { fetchWithAuth } = useAuth();
 
-    const [newBook, setNewBook] = useState<NewBook | null>(null);
     const notificationsRef = useRef<NotificationFunctions>(null);
     const queryClient = useQueryClient();
 
@@ -41,7 +33,7 @@ const AdminPage = () => {
         if (!deleteBook) return;
 
         try {
-            await fetchWithAuth(`https://localhost:7101/books/${deleteBook.id}`, {
+            await fetchWithAuth(`${API_ENDPOINTS.BOOKS}/${deleteBook.id}`, {
                 method: 'DELETE'
             }).then(res => {
                 if (!res.ok) throw new Error('Delete failed');
@@ -60,57 +52,19 @@ const AdminPage = () => {
         }
     }
 
-    const cancelAddBook = (): void => {
-        setNewBook(null);
-    }
-
-    const showAddBookModal = () => {
-        setNewBook({
-            title: "",
-            author: "",
-            genre: "",
-            yearPublished: new Date().getFullYear(),
-            coverImageUrl: "",
-            openLibraryId: ""
-        });
-    };
-
-    const updateNewBook = (field: keyof NewBook, value: string | number) => {
-        setNewBook(prev => prev ? { ...prev, [field]: value } : prev);
-    }
-
-    const addBook = async () => {
-
-        if (!newBook) return;
-
-        try {
-            await fetchWithAuth('https://localhost:7101/books', {
-                method: 'POST',
-                body: JSON.stringify(newBook),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(res => {
-                if (!res.ok) throw new Error('Add book failed');
-                return res.json();
-            }).then((createdBook: Book) => {
-                notificationsRef.current?.addNotification(`Added "${createdBook.title}"`, "success");
-                setBooks(books => [...books, createdBook].sort((a, b) => a.title.localeCompare(b.title)));
-                setNewBook(null);
-                // Clear useBooks react cache
-                queryClient.invalidateQueries({ queryKey: ['books'] });
-            });
-        } catch (error) {
-            setNewBook(null);
-            notificationsRef.current?.addNotification('Failed to add book', "error");
-        }
-    }
-
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-            <div className="flex items-center justify-between mb-6">
-                <button onClick={showAddBookModal} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors">Add new book</button>
+            <div className="mb-6 flex justify-end mr-2">
+                <AddBookForm
+                    onBookAddFailed={(error) => notificationsRef.current?.addNotification(`Failed to add book`, "error")}
+                    onBookAdded={(book) => {
+                        notificationsRef.current?.addNotification(`Added "${book.title}"`, "success");
+                        queryClient.invalidateQueries({ queryKey: ['books'] });
+                        setBooks(books => [...books, book].sort((a, b) => a.title.localeCompare(b.title)));
+
+                    }}
+                />
             </div>
 
             <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 gap-y-12">
@@ -159,104 +113,6 @@ const AdminPage = () => {
                 </div>
             )}
 
-            {newBook && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-surface rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-bold text-text mb-4">Add New Book</h2>
-                        <form onSubmit={(e) => e.preventDefault()}>
-                            <div>
-                                <label htmlFor="title" className="block text-text-secondary font-medium mb-2">Title *</label>
-                                <input
-                                    id="title"
-                                    type="text"
-                                    required
-                                    value={newBook.title}
-                                    onChange={(e) => updateNewBook('title', e.target.value)}
-                                    className="w-full py-2 px-3 rounded-lg border border-border bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="author" className="block text-text-secondary font-medium mb-2">Author *</label>
-                                <input
-                                    id="author"
-                                    type="text"
-                                    required
-                                    value={newBook.author}
-                                    onChange={(e) => updateNewBook('author', e.target.value)}
-                                    className="w-full py-2 px-3 rounded-lg border border-border bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="genre" className="block text-text-secondary font-medium mb-2">Genre *</label>
-                                <input
-                                    id="genre"
-                                    type="text"
-                                    required
-                                    value={newBook.genre}
-                                    onChange={(e) => updateNewBook('genre', e.target.value)}
-                                    className="w-full py-2 px-3 rounded-lg border border-border bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="year" className="block text-text-secondary font-medium mb-2">Year Published *</label>
-                                <input
-                                    id="year"
-                                    type="number"
-                                    required
-                                    min="1000"
-                                    max={new Date().getFullYear() + 1}
-                                    value={newBook.yearPublished}
-                                    onChange={(e) => updateNewBook('yearPublished', parseInt(e.target.value))}
-                                    className="w-full py-2 px-3 rounded-lg border border-border bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="coverImageUrl" className="block text-text-secondary font-medium mb-2">Cover Image URL</label>
-                                <input
-                                    id="coverImageUrl"
-                                    type="url"
-                                    value={newBook.coverImageUrl}
-                                    onChange={(e) => updateNewBook('coverImageUrl', e.target.value)}
-                                    className="w-full py-2 px-3 rounded-lg border border-border bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="openLibraryId" className="block text-text-secondary font-medium mb-2">Open Library ID</label>
-                                <input
-                                    id="openLibraryId"
-                                    type="text"
-                                    value={newBook.openLibraryId}
-                                    onChange={(e) => updateNewBook('openLibraryId', e.target.value)}
-                                    className="w-full py-2 px-3 rounded-lg border border-border bg-surface text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                    placeholder="e.g., OL123456W"
-                                />
-                            </div>
-                        </form>
-
-                        <div className="flex gap-3 justify-end pt-4">
-                            <button
-                                type="button"
-                                onClick={cancelAddBook}
-                                className="px-4 py-2 bg-surface-hover hover:bg-border text-text rounded font-medium transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={addBook}
-                                className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded font-medium transition-colors"
-                            >
-                                Add Book
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <Notifications ref={notificationsRef} />
         </div>
