@@ -5,7 +5,7 @@ export interface NotificationFunctions {
     addNotification: (message: string, type: "success" | "error") => void;
 }
 
-export const Notifications = forwardRef<NotificationFunctions>((props, ref) => {
+export const Notifications = forwardRef<NotificationFunctions>((_props, ref) => {
 
     const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
 
@@ -19,7 +19,7 @@ export const Notifications = forwardRef<NotificationFunctions>((props, ref) => {
         };
         setNotifications((prev) => [...prev, newNotification]);
 
-        const duration = 5000;;
+        const duration = 5000;
         setTimeout(() => {
             removeNotification(newNotification.id);
         }, duration);
@@ -47,5 +47,7 @@ export const Notifications = forwardRef<NotificationFunctions>((props, ref) => {
         </div>
     );
 });
+
+Notifications.displayName = 'Notifications'; // Add this line
 
 
